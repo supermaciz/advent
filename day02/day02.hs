@@ -5,6 +5,14 @@ goodPassword (minNb, maxNb, c, pwd) = cNb >= minNb && cNb <= maxNb
   where
     cNb = T.count (T.pack [c]) pwd
 
+goodPassword2 (i1, i2, c, pwd) =
+  case (goodChar c i1 pwd, goodChar c i2 pwd) of
+    (True, False) -> True
+    (False, True) -> True
+    _ -> False
+  where
+    goodChar c i pwd = i <= T.length pwd && T.index pwd (i - 1) == c
+
 isBoundary '-' = True
 isBoundary ' ' = True
 isBoundary ':' = True
@@ -23,5 +31,9 @@ makeTestCases =
 main = do
   input <- readFile "input"
   case makeTestCases input of
-    Just tests -> print $ length $ filter goodPassword tests
+    Just tests -> do
+      putStr "First Part: "
+      print $ length $ filter goodPassword tests
+      putStr "Second Part: "
+      print $ length $ filter goodPassword2 tests
     Nothing -> putStrLn "FAIL !"

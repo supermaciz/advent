@@ -1,4 +1,4 @@
-defmodule Day02Part1 do
+defmodule Day02Part2 do
   require Integer
 
   def solve(file) do
@@ -28,25 +28,28 @@ defmodule Day02Part1 do
         acc
       end
     end)
-    |> IO.inspect(label: "Invalid ids in #{inspect(range)}", charlists: :as_lists)
+
+    # |> IO.inspect(label: "Invalid ids in #{inspect(range)}", charlists: :as_lists)
   end
+
+  defp invalid?(<<_>>), do: false
 
   defp invalid?(int_str) do
     len = String.length(int_str)
+    max_substring_len = Integer.floor_div(len, 2)
+    digits = String.graphemes(int_str)
 
-    if Integer.is_odd(len) do
-      false
-    else
-      [first, last] =
-        int_str
-        |> String.graphemes()
-        |> Enum.chunk_every(Integer.floor_div(len, 2))
+    Enum.any?(1..max_substring_len, fn
+      window_len when rem(len, window_len) != 0 ->
+        false
 
-      first == last
-    end
+      window_len ->
+        chunks = Enum.chunk_every(digits, window_len)
+        Enum.all?(chunks, &(&1 == hd(chunks)))
+    end)
   end
 end
 
 [file | _] = System.argv()
-result = Day02Part1.solve(file)
+result = Day02Part2.solve(file)
 IO.puts("Result: #{result}")

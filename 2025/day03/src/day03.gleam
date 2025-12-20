@@ -1,32 +1,38 @@
 import argv
 import gleam/int
 import gleam/io
-import gleam/list.{Continue}
+import gleam/list
 import gleam/string
 import simplifile
+
+pub type Part {
+  Part1
+  Part2
+}
 
 pub fn main() -> Nil {
   let assert [part, ..] = argv.load().arguments
   case simplifile.read("./input.txt"), part {
     Error(err), _ -> err |> simplifile.describe_error |> io.print_error
     Ok(input), "part1" -> {
-      part1(input)
+      solve_part(Part1, input)
     }
-    // Ok(input), "part2" -> {
-    //   part2(input)
-    // }
+    Ok(input), "part2" -> {
+      solve_part(Part2, input)
+    }
     Ok(_), _ -> panic as string.concat(["Unknown part: ", part])
   }
 }
 
-pub fn part1(input: String) -> Nil {
+pub fn solve_part(part: Part, input: String) -> Nil {
   let result =
     input
     |> string.split("\n")
     |> list.filter_map(fn(line) {
-      case line {
-        "" -> Error(Nil)
-        _ -> Ok(largest_joltage(line))
+      case line, part {
+        "", _ -> Error(Nil)
+        _, Part1 -> Ok(largest_joltage(line))
+        _, Part2 -> Ok(largest_joltage12(line))
       }
     })
     |> int.sum()
@@ -53,6 +59,49 @@ pub fn largest_joltage(bank: String) -> Int {
     })
 
   let number_str = int.to_string(first) <> int.to_string(second)
+  case int.parse(number_str) {
+    Ok(num) -> num
+    Error(_) ->
+      panic as string.concat(["Failed to parse largest joltage: ", number_str])
+  }
+}
+
+pub fn largest_joltage12(bank: String) -> Int {
+  let len = string.length(bank)
+  // io.println("Bank: " <> bank)
+
+  let number_str =
+    bank
+    |> string.to_graphemes()
+    |> list.index_fold([], fn(acc, digit_str, i) {
+      let maybe_digit = int.parse(digit_str)
+      let rem_digits_count = len - i
+
+      // io.println(
+      //   "Current digit "
+      //   <> digit_str
+      //   <> "(i:"
+      //   <> int.to_string(i)
+      //   <> "). Remaining digits: "
+      //   <> int.to_string(rem_digits_count),
+      // )
+      case acc, list.length(acc), maybe_digit {
+        _acc, _, Error(_) ->
+          panic as string.concat(["Invalid digit: ", digit_str])
+        [], _, Ok(digit) -> [digit]
+        [prev, ..rest], acc_len, Ok(digit)
+          if digit > prev && rem_digits_count > 12 - acc_len
+        -> [digit, ..rest]
+        acc, acc_len, Ok(digit) if acc_len < 12 -> [digit, ..acc]
+        acc, _, Ok(_digit) -> acc
+      }
+    })
+    |> list.reverse()
+    |> list.map(int.to_string)
+    |> string.join("")
+
+  // io.println("=========\n")
+
   case int.parse(number_str) {
     Ok(num) -> num
     Error(_) ->

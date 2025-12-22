@@ -1,7 +1,10 @@
 import argv
+import gleam/bit_array
+import gleam/bool
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/result
 import gleam/string
 import simplifile
 
@@ -32,7 +35,7 @@ pub fn solve_part(part: Part, input: String) -> Nil {
       case line, part {
         "", _ -> Error(Nil)
         _, Part1 -> Ok(largest_joltage(line))
-        _, Part2 -> Ok(largest_joltage12(line))
+        _, Part2 -> Ok(largest_joltage_n(line, 12))
       }
     })
     |> int.sum()
@@ -66,45 +69,80 @@ pub fn largest_joltage(bank: String) -> Int {
   }
 }
 
-pub fn largest_joltage12(bank: String) -> Int {
-  let len = string.length(bank)
-  // io.println("Bank: " <> bank)
+pub fn largest_joltage_n(bank: String, n: Int) -> Int {
+  io.println("Bank: " <> bank)
 
   let number_str =
     bank
-    |> string.to_graphemes()
-    |> list.index_fold([], fn(acc, digit_str, i) {
-      let maybe_digit = int.parse(digit_str)
-      let rem_digits_count = len - i
-
-      // io.println(
-      //   "Current digit "
-      //   <> digit_str
-      //   <> "(i:"
-      //   <> int.to_string(i)
-      //   <> "). Remaining digits: "
-      //   <> int.to_string(rem_digits_count),
-      // )
-      case acc, list.length(acc), maybe_digit {
-        _acc, _, Error(_) ->
-          panic as string.concat(["Invalid digit: ", digit_str])
-        [], _, Ok(digit) -> [digit]
-        [prev, ..rest], acc_len, Ok(digit)
-          if digit > prev && rem_digits_count > 12 - acc_len
-        -> [digit, ..rest]
-        acc, acc_len, Ok(digit) if acc_len < 12 -> [digit, ..acc]
-        acc, _, Ok(_digit) -> acc
-      }
-    })
+    |> best_digits(0, n, [])
     |> list.reverse()
     |> list.map(int.to_string)
     |> string.join("")
 
-  // io.println("=========\n")
+  io.println("=========\n")
 
   case int.parse(number_str) {
     Ok(num) -> num
     Error(_) ->
       panic as string.concat(["Failed to parse largest joltage: ", number_str])
+  }
+}
+
+fn best_digits(bank: String, i: Int, n: Int, acc: List(Int)) -> List(Int) {
+  let bank_len = string.byte_size(bank)
+  let remaining_bank_digits = bank_len - i
+  let acc_len = list.length(acc)
+  let digits_to_find = n - acc_len
+
+  let maybe_next_acc = {
+    use <- bool.guard(when: string.byte_size(bank) == i, return: Error(Nil))
+    use maybe_digit <- result.try(bit_array.slice(
+      bit_array.from_string(bank),
+      i,
+      1,
+    ))
+    use digit_str <- result.try(bit_array.to_string(maybe_digit))
+    use digit <- result.try(int.parse(digit_str))
+
+    io.print(
+      "Current digit \""
+      <> digit_str
+      <> "\" (Index: "
+      <> int.to_string(i)
+      <> "). "
+      <> "Remaining bank digits: "
+      <> int.to_string(remaining_bank_digits)
+      <> ". Digits to find: "
+      <> int.to_string(digits_to_find),
+    )
+
+    case acc {
+      [] -> {
+        io.println(" => A")
+        Ok([digit])
+      }
+      [prev, ..rest] if digit > prev && remaining_bank_digits > digits_to_find -> {
+        io.println(" => B")
+        Ok([digit, ..rest])
+      }
+      _ if digits_to_find >= 1 -> {
+        io.println(" => C")
+        Ok([digit, ..acc])
+      }
+      _ if remaining_bank_digits > 0 -> {
+        io.println(" => D")
+        Ok(acc)
+      }
+
+      _ -> {
+        io.println(" => STOP")
+        Error(Nil)
+      }
+    }
+  }
+
+  case maybe_next_acc {
+    Ok(next_acc) -> best_digits(bank, i + 1, n, next_acc)
+    Error(_) -> acc
   }
 }

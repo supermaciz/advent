@@ -7,22 +7,15 @@ import "core:os"
 import "core:strconv"
 import "core:strings"
 
-compute_present_paper :: proc(l, h, w: int) -> int {
+compute_present_paper :: proc(l, w, h: int) -> int {
 	return 2 * l * w + 2 * w * h + 2 * h * l + compute_smallest_surface(l, w, h)
 }
 
-compute_smallest_surface :: proc(l, h, w: int) -> int {
-	switch {
-	case l <= h && h <= w:
-		return l * h
-	case l <= h && h > w:
-		return l * w
-	case:
-		return h * w
-	}
+compute_smallest_surface :: proc(l, w, h: int) -> int {
+	return min(l * w, h * w, l * h)
 }
 
-parse_line :: proc(line: string) -> (l, h, w: int) {
+parse_line :: proc(line: string) -> (l, w, h: int) {
 	numbers := strings.split(line, "x")
 	defer delete(numbers)
 	for nb, i in numbers {
@@ -31,9 +24,9 @@ parse_line :: proc(line: string) -> (l, h, w: int) {
 		case 0:
 			l = tmp
 		case 1:
-			h = tmp
-		case 2:
 			w = tmp
+		case 2:
+			h = tmp
 		}
 	}
 	return

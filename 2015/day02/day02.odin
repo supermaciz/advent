@@ -7,35 +7,49 @@ import "core:os"
 import "core:strconv"
 import "core:strings"
 
-compute_present_paper :: proc(l, w, h: int) -> int {
-	return 2 * l * w + 2 * w * h + 2 * h * l + compute_smallest_surface(l, w, h)
+// A right rectangular prism
+Present :: struct {
+	length: int,
+	width:  int,
+	height: int,
 }
 
-compute_smallest_surface :: proc(l, w, h: int) -> int {
-	return min(l * w, h * w, l * h)
+compute_present_paper :: proc(present: Present) -> int {
+	return 2 * present.length * present.width +
+		2 * present.width * present.height +
+		2 * present.height * present.length +
+		compute_smallest_surface(present)
 }
 
-parse_line :: proc(line: string) -> (l, w, h: int) {
+compute_smallest_surface :: proc(present: Present) -> int {
+	return min(
+		present.length * present.width,
+		present.height * present.width,
+		present.length * present.height,
+	)
+}
+
+parse_line :: proc(line: string) -> Present {
+	present: Present
 	numbers := strings.split(line, "x")
 	defer delete(numbers)
 	for nb, i in numbers {
-		tmp, ok := strconv.parse_int(nb)
+		tmp, _ := strconv.parse_int(nb)
 		switch i {
 		case 0:
-			l = tmp
+			present.length = tmp
 		case 1:
-			w = tmp
+			present.width = tmp
 		case 2:
-			h = tmp
+			present.height = tmp
 		}
 	}
-	return
+	return present
 }
 
 solve_part1 :: proc(reader: ^bufio.Reader) -> int {
 	result: int
 	for {
-
 		line, err := bufio.reader_read_string(reader, '\n')
 		if len(line) > 0 {
 			fmt.print("Line:", line)

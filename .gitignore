@@ -1,3 +1,4 @@
+# Haskell
 dist
 dist-*
 cabal-dev
@@ -22,23 +23,18 @@ cabal.project.local~
 .HTF/
 .ghc.environment.*
 
+# Compiled binaries
+*.bin
 main
 myDay
 solution
 
+# Inputs & puzzle text
 */*/input.txt
-
-
-*.log
-
-.idea/
-*/.idea/
-
 input.txt
+INSTRUCTIONS.md
 
+# Misc
 *.log
-
 .idea/
 */.idea/
-
-INSTRUCTIONS.md
